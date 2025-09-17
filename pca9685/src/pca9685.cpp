@@ -35,15 +35,19 @@ PCA9685::PCA9685(i2c_master_dev_handle_t handle,
     ESP_LOGD(kTag, "Configuring PCA9685");
     uint8_t buffer[3];
     buffer[0] = 0x00;
-    buffer[1] = (1 << 5);  // MDODE 1 : Set Auto Increment
-    // MODE2
+    buffer[1] = (11 << 4);  // MDODE 1 : Sleep, Set Auto Increment
     buffer[2] = ((invert ? 1 : 0) << 4) | ((out_drv_mode & 0x1) << 2);
     ESP_ERROR_CHECK(i2c_master_transmit(this->handle_, buffer, 3, kI2CtimeoutMs));
 
+    uint8_t buffer2[2];
     uint32_t prescale = roundf(25000000.0f / (4096.0f * frequency)) - 1;
     ESP_LOGD(kTag, "Setting prescale to %lu", prescale);
-    buffer[0] = 0xFE;
-    buffer[1] = prescale;
+    buffer2[0] = 0xFE;
+    buffer2[1] = prescale;
+    ESP_ERROR_CHECK(i2c_master_transmit(this->handle_, buffer2, 2, kI2CtimeoutMs));
+
+    // Wake up
+    buffer[1] &= ~(1 << 4);
     ESP_ERROR_CHECK(i2c_master_transmit(this->handle_, buffer, 2, kI2CtimeoutMs));
 }
 
